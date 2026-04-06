@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jarvis-app
+  namespace: jarvis
+  labels:
+    app: jarvis-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: jarvis-app
+  template:
+    metadata:
+      labels:
+        app: jarvis-app
+    spec:
+      containers:
+      - name: jarvis-app
+        image: docker.io/your-username/jarvis-app:latest
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5

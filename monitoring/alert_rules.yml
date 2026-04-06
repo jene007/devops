@@ -1,0 +1,20 @@
+groups:
+  - name: jarvis-alerts
+    rules:
+      - alert: PodCrashLooping
+        expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Pod in CrashLoopBackOff"
+          description: "One or more pods are repeatedly crashing."
+
+      - alert: HighNodeCPU
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High node CPU usage"
+          description: "Node CPU usage is above 85% for 5 minutes."
