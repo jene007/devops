@@ -80,6 +80,38 @@ body {
   animation: rise 0.45s ease;
 }
 
+.nav-panel {
+  padding: 12px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--accent-soft);
+  border: 1px solid rgba(147, 183, 199, 0.35);
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  background: rgba(46, 196, 182, 0.08);
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  border-color: rgba(255, 159, 28, 0.6);
+  color: #fff7eb;
+}
+
+.nav-link.active {
+  background: linear-gradient(90deg, var(--accent), #ffbf69);
+  color: #211000;
+  border-color: transparent;
+}
+
 .mission-panel {
   display: grid;
   gap: 12px;

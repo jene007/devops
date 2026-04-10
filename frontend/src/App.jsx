@@ -1,5 +1,10 @@
 import React, { useMemo, useState } from "react";
+import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 import { runCommandStream } from "./api";
+import OverviewPage from "./pages/OverviewPage";
+import CommandPage from "./pages/CommandPage";
+import TimelinePage from "./pages/TimelinePage";
+import LogsPage from "./pages/LogsPage";
 
 const mockStatus = [
   { label: "Terraform", state: "Ready", tone: "neutral" },
@@ -216,143 +221,63 @@ export default function App() {
         <p>Natural-language infrastructure automation with self-healing intelligence.</p>
       </header>
 
-      <section className="panel mission-panel">
-        <div className="panel-title-row">
-          <h2>Mission Profiles</h2>
-          <span className="chip">Adaptive</span>
+      <nav className="panel nav-panel">
+        <div className="nav-links">
+          <NavLink to="/overview" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
+            Overview
+          </NavLink>
+          <NavLink to="/command" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
+            Command
+          </NavLink>
+          <NavLink to="/timeline" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
+            Timeline
+          </NavLink>
+          <NavLink to="/logs" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
+            Logs
+          </NavLink>
         </div>
-        <div className="preset-row">
-          {COMMAND_PRESETS.map((item) => (
-            <button key={item} type="button" className="preset-pill" onClick={() => applyPreset(item)}>
-              {item}
-            </button>
-          ))}
-        </div>
-        <div className="intel-grid">
-          <article className="intel-card">
-            <span>Completion</span>
-            <strong>{completionRate}</strong>
-          </article>
-          <article className="intel-card">
-            <span>Steps Cleared</span>
-            <strong>{timelineStats.done}/{timelineStats.total}</strong>
-          </article>
-          <article className="intel-card">
-            <span>Error Count</span>
-            <strong>{timelineStats.error}</strong>
-          </article>
-          <article className="intel-card">
-            <span>Last Signal</span>
-            <strong className={`signal-${LEVEL_COLORS[logStats.lastLevel] ?? "neutral"}`}>{logStats.lastLevel}</strong>
-          </article>
-        </div>
-      </section>
+      </nav>
 
-      <section className="panel status-panel">
-        <div className="panel-title-row">
-          <h2>System Status: {statusText}</h2>
-          <span className="chip">Last Run: {lastRunAt ?? "N/A"}</span>
-        </div>
-        <div className="status-grid">
-          {mockStatus.map((item) => (
-            <article key={item.label} className={`status-card status-${item.tone}`}>
-              <span>{item.label}</span>
-              <strong>{item.state}</strong>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel command-panel">
-        <h2>Command Center</h2>
-        <form onSubmit={submit}>
-          <div className="control-grid">
-            <label className="control-item checkbox-item">
-              <input
-                type="checkbox"
-                checked={dryRun}
-                onChange={(e) => setDryRun(e.target.checked)}
-              />
-              Dry Run
-            </label>
-
-            <label className="control-item checkbox-item">
-              <input
-                type="checkbox"
-                checked={enableDocker}
-                onChange={(e) => setEnableDocker(e.target.checked)}
-              />
-              Build Docker
-            </label>
-
-            <label className="control-item">
-              Provider
-              <select value={provider} onChange={(e) => setProvider(e.target.value)}>
-                <option value="auto">Auto</option>
-                <option value="openai">OpenAI</option>
-                <option value="huggingface">Hugging Face</option>
-                <option value="heuristic">Heuristic</option>
-              </select>
-            </label>
-          </div>
-
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            rows={4}
-            placeholder="Deploy https://github.com/<owner>/<repo> to aws us-east-1 as python app with docker build and kubernetes rollout"
-          />
-          <small className="input-hint">
-            Include: repo URL, cloud, region, app type (node/python/java), and action.
-          </small>
-          <small className="input-hint">
-            For AWS deploy: set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_DEFAULT_REGION.
-          </small>
-          <div className="button-row">
-            <button type="submit" disabled={isRunning || !prompt.trim()}>
-              {isRunning ? "Executing..." : "Run Autonomous Pipeline"}
-            </button>
-            <button type="button" className="ghost" onClick={createRunBrief}>
-              Copy Run Brief
-            </button>
-            <button
-              type="button"
-              className="ghost"
-              onClick={() => setLogs(["[BOOT] Logs cleared", "[INFO] Waiting for deployment command"])}
-              disabled={isRunning}
-            >
-              Clear Logs
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section className="panel timeline-panel">
-        <div className="panel-title-row">
-          <h2>Execution Timeline</h2>
-          <span className="chip">Live</span>
-        </div>
-        <div className="timeline-list">
-          {timeline.length === 0 ? (
-            <p className="timeline-empty">Start a run to see Parse &rarr; Plan &rarr; Terraform &rarr; K8s &rarr; Monitor.</p>
-          ) : (
-            timeline.map((step) => (
-              <article key={step.id} className={`timeline-step timeline-${step.state}`}>
-                <span className="timeline-dot">{STEP_ICONS[step.state]}</span>
-                <div className="timeline-content">
-                  <strong>{step.name}</strong>
-                  <small>{step.detail}</small>
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-      </section>
-
-      <section className="panel logs-panel">
-        <h2>Pipeline Logs</h2>
-        <pre>{logs.join("\n")}</pre>
-      </section>
+      <Routes>
+        <Route path="/" element={<Navigate to="/overview" replace />} />
+        <Route
+          path="/overview"
+          element={
+            <OverviewPage
+              completionRate={completionRate}
+              timelineStats={timelineStats}
+              logStats={logStats}
+              levelColors={LEVEL_COLORS}
+              statusText={statusText}
+              lastRunAt={lastRunAt}
+              mockStatus={mockStatus}
+              commandPresets={COMMAND_PRESETS}
+              onApplyPreset={applyPreset}
+            />
+          }
+        />
+        <Route
+          path="/command"
+          element={
+            <CommandPage
+              prompt={prompt}
+              setPrompt={setPrompt}
+              dryRun={dryRun}
+              setDryRun={setDryRun}
+              enableDocker={enableDocker}
+              setEnableDocker={setEnableDocker}
+              provider={provider}
+              setProvider={setProvider}
+              isRunning={isRunning}
+              onSubmit={submit}
+              onCreateRunBrief={createRunBrief}
+              onClearLogs={() => setLogs(["[BOOT] Logs cleared", "[INFO] Waiting for deployment command"])}
+            />
+          }
+        />
+        <Route path="/timeline" element={<TimelinePage timeline={timeline} stepIcons={STEP_ICONS} />} />
+        <Route path="/logs" element={<LogsPage logs={logs} />} />
+      </Routes>
     </div>
   );
 }
