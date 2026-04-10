@@ -21,6 +21,7 @@ jobs:
       - name: Build evidence folder
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_SERVER_URL: ${{ github.server_url }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.event.workflow_run.id }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
@@ -29,8 +30,22 @@ jobs:
         run: |
           EVIDENCE_DIR="cicd/evidence/run-${RUN_ID}"
           mkdir -p "${EVIDENCE_DIR}"
+          ARTIFACTS_URL="${GH_SERVER_URL}/${REPO}/actions/runs/${RUN_ID}/artifacts"
 
           gh run view "${RUN_ID}" --repo "${REPO}" --log > "${EVIDENCE_DIR}/master-run.log"
+
+          {
+            echo "# Deployment Highlights"
+            echo
+            echo "## Docker stage"
+            grep -E "(Build Docker image|Login to Docker Hub|Push Docker image|docker push)" "${EVIDENCE_DIR}/master-run.log" || echo "No Docker lines found"
+            echo
+            echo "## Terraform stage"
+            grep -E "(Terraform Apply|terraform apply|Apply complete|Outputs:)" "${EVIDENCE_DIR}/master-run.log" || echo "No Terraform lines found"
+            echo
+            echo "## Kubernetes stage"
+            grep -E "(Deploy to Kubernetes|kubectl apply|rollout status|successfully rolled out|deployment/jarvis-app)" "${EVIDENCE_DIR}/master-run.log" || echo "No Kubernetes lines found"
+          } > "${EVIDENCE_DIR}/deployment-highlights.md"
 
           {
             echo "# Automated Evidence Summary"
@@ -38,7 +53,9 @@ jobs:
             echo "- Workflow: ${RUN_NAME}"
             echo "- Branch: ${HEAD_BRANCH}"
             echo "- Source run URL: ${RUN_URL}"
+            echo "- Source run artifacts URL: ${ARTIFACTS_URL}"
             echo "- Log file: master-run.log"
+            echo "- Parsed highlights: deployment-highlights.md"
             echo "- Rubric evidence: cicd/RUBRIC_EVIDENCE.md"
           } > "${EVIDENCE_DIR}/summary.md"
 

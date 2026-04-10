@@ -162,6 +162,7 @@ Automated evidence artifact workflow:
 - Trigger: after successful `JARVIS DevOps CI/CD` run on `master`
 - Output: uploads artifact `deployment-evidence-<run_id>` containing:
   - `master-run.log`
+  - `deployment-highlights.md` (Docker, Terraform, Kubernetes key lines)
   - `summary.md`
   - `RUBRIC_EVIDENCE.md`
 

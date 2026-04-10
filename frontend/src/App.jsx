@@ -15,6 +15,24 @@ const STEP_ICONS = {
   error: "✕",
 };
 
+const COMMAND_PRESETS = [
+  "Deploy my app globally with autoscaling",
+  "Provision staging on aws us-east-1 with dry run",
+  "Deploy from repo with docker image build and kubernetes rollout",
+  "Run Terraform plan then apply and verify monitoring",
+];
+
+const LEVEL_COLORS = {
+  INFO: "neutral",
+  PLAN: "neutral",
+  DONE: "ok",
+  ERROR: "error",
+  BOOT: "neutral",
+  USER: "neutral",
+  MODE: "neutral",
+  AI: "warn",
+};
+
 export default function App() {
   const [prompt, setPrompt] = useState("");
   const [dryRun, setDryRun] = useState(false);
@@ -28,7 +46,40 @@ export default function App() {
   ]);
   const [isRunning, setIsRunning] = useState(false);
 
+  const timelineStats = useMemo(() => {
+    return timeline.reduce(
+      (acc, item) => {
+        acc.total += 1;
+        acc[item.state] = (acc[item.state] || 0) + 1;
+        return acc;
+      },
+      { total: 0, pending: 0, active: 0, done: 0, error: 0 }
+    );
+  }, [timeline]);
+
+  const logStats = useMemo(() => {
+    return logs.reduce(
+      (acc, entry) => {
+        const match = entry.match(/^\[([A-Z]+)\]/);
+        const level = match?.[1] || "INFO";
+        acc[level] = (acc[level] || 0) + 1;
+        acc.total += 1;
+        acc.lastLevel = level;
+        return acc;
+      },
+      { total: 0, lastLevel: "INFO" }
+    );
+  }, [logs]);
+
   const statusText = useMemo(() => (isRunning ? "Executing" : "Idle"), [isRunning]);
+
+  const completionRate = useMemo(() => {
+    if (!timelineStats.total) {
+      return "0%";
+    }
+    const value = Math.round((timelineStats.done / timelineStats.total) * 100);
+    return `${value}%`;
+  }, [timelineStats]);
 
   const initializeTimeline = (steps) => {
     const items = steps.map((name, index) => ({
@@ -67,6 +118,33 @@ export default function App() {
         idx === activeIndex ? { ...step, state: "error", detail: message } : step
       );
     });
+  };
+
+  const applyPreset = (value) => {
+    setPrompt(value);
+    setLogs((prev) => [...prev, `[INFO] Preset loaded: ${value}`]);
+  };
+
+  const createRunBrief = async () => {
+    const recent = logs.slice(-8).join("\n");
+    const brief = [
+      "JARVIS Deployment Brief",
+      `Run time: ${lastRunAt ?? "N/A"}`,
+      `Status: ${statusText}`,
+      `Mode: dry_run=${dryRun} provider=${provider} docker=${enableDocker}`,
+      `Timeline: total=${timelineStats.total} done=${timelineStats.done} active=${timelineStats.active} error=${timelineStats.error}`,
+      `Completion: ${completionRate}`,
+      "Recent logs:",
+      recent || "No logs captured.",
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(brief);
+      setLogs((prev) => [...prev, "[DONE] Deployment brief copied to clipboard"]);
+    } catch {
+      setLogs((prev) => [...prev, "[ERROR] Clipboard unavailable, copy from logs panel"]);
+      setLogs((prev) => [...prev, `[INFO] ${brief}`]);
+    }
   };
 
   const submit = async (e) => {
@@ -133,9 +211,42 @@ export default function App() {
   return (
     <div className="page">
       <header className="hero">
+        <p className="hero-kicker">AUTONOMOUS MISSION CONTROL</p>
         <h1>JARVIS DevOps Control Grid</h1>
         <p>Natural-language infrastructure automation with self-healing intelligence.</p>
       </header>
+
+      <section className="panel mission-panel">
+        <div className="panel-title-row">
+          <h2>Mission Profiles</h2>
+          <span className="chip">Adaptive</span>
+        </div>
+        <div className="preset-row">
+          {COMMAND_PRESETS.map((item) => (
+            <button key={item} type="button" className="preset-pill" onClick={() => applyPreset(item)}>
+              {item}
+            </button>
+          ))}
+        </div>
+        <div className="intel-grid">
+          <article className="intel-card">
+            <span>Completion</span>
+            <strong>{completionRate}</strong>
+          </article>
+          <article className="intel-card">
+            <span>Steps Cleared</span>
+            <strong>{timelineStats.done}/{timelineStats.total}</strong>
+          </article>
+          <article className="intel-card">
+            <span>Error Count</span>
+            <strong>{timelineStats.error}</strong>
+          </article>
+          <article className="intel-card">
+            <span>Last Signal</span>
+            <strong className={`signal-${LEVEL_COLORS[logStats.lastLevel] ?? "neutral"}`}>{logStats.lastLevel}</strong>
+          </article>
+        </div>
+      </section>
 
       <section className="panel status-panel">
         <div className="panel-title-row">
@@ -194,6 +305,9 @@ export default function App() {
           <div className="button-row">
             <button type="submit" disabled={isRunning || !prompt.trim()}>
               {isRunning ? "Executing..." : "Run Autonomous Pipeline"}
+            </button>
+            <button type="button" className="ghost" onClick={createRunBrief}>
+              Copy Run Brief
             </button>
             <button
               type="button"
