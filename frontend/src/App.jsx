@@ -305,6 +305,9 @@ export default function App() {
           <small className="input-hint">
             Include: repo URL, cloud, region, app type (node/python/java), and action.
           </small>
+          <small className="input-hint">
+            For AWS deploy: set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_DEFAULT_REGION.
+          </small>
           <div className="button-row">
             <button type="submit" disabled={isRunning || !prompt.trim()}>
               {isRunning ? "Executing..." : "Run Autonomous Pipeline"}
