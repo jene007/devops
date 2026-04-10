@@ -4,6 +4,7 @@
   "words": [
     "AUTONOMOUS",
     "Chakra",
+    "Petch",
     "chdir",
     "cicd",
     "compileall",
@@ -14,6 +15,8 @@
     "k8s",
     "kubeconfig",
     "LASTEXITCODE",
-    "jene"
+    "jene",
+    "pyproject",
+    "uvicorn"
   ]
 }
