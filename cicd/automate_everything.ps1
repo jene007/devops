@@ -14,69 +14,64 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Test-CommandExists {
-    param([string]$Name)
-    return [bool](Get-Command $Name -ErrorAction SilentlyContinue)
-}
-
-function Test-CommandRequired {
-    param([string]$Name, [string]$InstallHint)
-    if (-not (Test-CommandExists -Name $Name)) {
-        throw "Missing required command '$Name'. $InstallHint"
+function Assert-Tool {
+    param([string]$ToolName, [string]$Hint)
+    if (-not (Get-Command $ToolName -ErrorAction SilentlyContinue)) {
+        throw "Missing required command '$ToolName'. $Hint"
     }
 }
 
-function Read-RequiredEnv {
-    param([string]$Name)
-    $value = [Environment]::GetEnvironmentVariable($Name)
+function Get-RequiredEnvironmentValue {
+    param([string]$VariableName)
+    $value = [Environment]::GetEnvironmentVariable($VariableName)
     if ([string]::IsNullOrWhiteSpace($value)) {
-        throw "Missing required environment variable: $Name"
+        throw "Missing required environment variable: $VariableName"
     }
     return $value
 }
 
-function Resolve-RepositoryFromRemote {
-    $remote = git remote get-url origin
-    if ($remote -match "github.com[:/](?<repo>[^/]+/[^/.]+)") {
+function Get-RepositoryFromRemote {
+    $originUrl = git remote get-url origin
+    if ($originUrl -match "github.com[:/](?<repo>[^/]+/[^/.]+)") {
         return $Matches.repo
     }
     return $null
 }
 
-function Get-RunByTrigger {
+function Wait-ForRun {
     param(
         [string]$Repo,
         [string]$Workflow,
         [string]$Branch,
-        [string]$Trigger,
+        [string]$RunType,
         [int]$Retries,
         [int]$DelaySeconds
     )
 
     for ($i = 1; $i -le $Retries; $i++) {
-        $json = gh run list --repo $Repo --workflow $Workflow --branch $Branch --event $Trigger --limit 1 --json databaseId,url,status,conclusion,headBranch
+        $json = gh run list --repo $Repo --workflow $Workflow --branch $Branch --event $RunType --limit 1 --json databaseId,url,status,conclusion,headBranch
         $runs = $json | ConvertFrom-Json
         if ($runs -and $runs.Count -gt 0) {
             return $runs[0]
         }
-        Write-Host "Waiting for $Trigger run to appear (attempt $i/$Retries)..."
+        Write-Host "Waiting for $RunType run to appear (attempt $i/$Retries)..."
         Start-Sleep -Seconds $DelaySeconds
     }
 
-    throw "No run found for workflow '$Workflow' on branch '$Branch' and event '$Trigger'."
+    throw "No run found for workflow '$Workflow' on branch '$Branch' and event '$RunType'."
 }
 
-Test-CommandRequired -Name "git" -InstallHint "Install Git and ensure it is on PATH."
-Test-CommandRequired -Name "gh" -InstallHint "Install GitHub CLI from https://cli.github.com/ and ensure it is on PATH."
+Assert-Tool -ToolName "git" -Hint "Install Git and ensure it is on PATH."
+Assert-Tool -ToolName "gh" -Hint "Install GitHub CLI from https://cli.github.com/ and ensure it is on PATH."
 
-$null = gh auth status 2>&1
+gh auth status 2>&1 | Out-Null
 
 if ($LASTEXITCODE -ne 0) {
     throw "GitHub CLI is not authenticated. Run: gh auth login"
 }
 
 if ($Repository -eq "") {
-    $Repository = Resolve-RepositoryFromRemote
+    $Repository = Get-RepositoryFromRemote
     if (-not $Repository) {
         throw "Repository not provided and could not infer from git remote."
     }
@@ -105,7 +100,7 @@ if (-not $SkipSecrets) {
     )
 
     foreach ($secret in $secretNames) {
-        $secretValue = Read-RequiredEnv -Name $secret
+        $secretValue = Get-RequiredEnvironmentValue -VariableName $secret
         $secretValue | gh secret set $secret --repo $Repository --body -
         Write-Host "Secret set: $secret"
     }
@@ -145,7 +140,7 @@ $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $evidenceDir = Join-Path "cicd/evidence" $timestamp
 New-Item -Path $evidenceDir -ItemType Directory -Force | Out-Null
 
-$prRun = Get-RunByTrigger -Repo $Repository -Workflow $WorkflowName -Branch $HeadBranch -Trigger "pull_request" -Retries $RunDiscoveryRetries -DelaySeconds $RunDiscoveryDelaySeconds
+$prRun = Wait-ForRun -Repo $Repository -Workflow $WorkflowName -Branch $HeadBranch -RunType "pull_request" -Retries $RunDiscoveryRetries -DelaySeconds $RunDiscoveryDelaySeconds
 $prRunId = $prRun.databaseId
 Write-Host "Capturing PR run logs from run ID $prRunId..."
 gh run view $prRunId --repo $Repository --log > (Join-Path $evidenceDir "pr-run.log")
@@ -155,7 +150,7 @@ if (-not $SkipMerge) {
     gh pr merge $prNumber --repo $Repository --squash --delete-branch
 }
 
-$mainRun = Get-RunByTrigger -Repo $Repository -Workflow $WorkflowName -Branch $BaseBranch -Trigger "push" -Retries $RunDiscoveryRetries -DelaySeconds $RunDiscoveryDelaySeconds
+$mainRun = Wait-ForRun -Repo $Repository -Workflow $WorkflowName -Branch $BaseBranch -RunType "push" -Retries $RunDiscoveryRetries -DelaySeconds $RunDiscoveryDelaySeconds
 $mainRunId = $mainRun.databaseId
 Write-Host "Waiting for main-branch deploy run ID $mainRunId to complete..."
 gh run watch $mainRunId --repo $Repository --exit-status
