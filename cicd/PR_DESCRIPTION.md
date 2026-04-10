@@ -1,3 +1,4 @@
+<!-- cspell:words healthcheck -->
 ## Summary
 This PR upgrades the DevOps project to satisfy full rubric coverage across collaboration, CI/CD, containerization/deployment, and IaC verification.
 
@@ -34,6 +35,6 @@ This PR upgrades the DevOps project to satisfy full rubric coverage across colla
   - `AWS_SECRET_ACCESS_KEY`
   - `AWS_DEFAULT_REGION`
   - `KUBE_CONFIG_DATA`
-
+  
 ## Rubric Evidence
 Please reference `cicd/RUBRIC_EVIDENCE.md` for criterion-to-artifact mapping.
