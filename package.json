@@ -10,7 +10,8 @@
     "build:frontend": "npm --prefix frontend run build",
     "validate:python": "python -m compileall ai_engine intent_engine github_analyzer docker_builder k8s_deployer terraform_runner orchestrator cli self_healing monitoring",
     "validate:iac": "terraform -chdir=terraform fmt -check && terraform -chdir=terraform init -backend=false && terraform -chdir=terraform validate",
-    "validate": "npm run test && npm run build && npm run validate:python"
+    "validate": "npm run test && npm run build && npm run validate:python",
+    "automate:everything": "powershell -ExecutionPolicy Bypass -File cicd/automate_everything.ps1"
   },
   "dependencies": {
     "express": "^4.21.2"

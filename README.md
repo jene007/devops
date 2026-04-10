@@ -237,6 +237,39 @@ terraform -chdir=terraform init -backend=false
 terraform -chdir=terraform validate
 ```
 
+## Fully Automated GitHub Flow
+
+This project includes a one-command automation script that performs:
+- push feature branch
+- configure required Actions secrets
+- create pull request
+- wait for PR CI checks
+- merge PR into base branch
+- wait for main/master pipeline completion
+- export PR and main run logs into `cicd/evidence/<timestamp>/`
+
+### Prerequisites for automation
+- GitHub CLI (`gh`) installed and authenticated (`gh auth login`)
+- Environment variables set in your shell:
+  - `DOCKERHUB_USERNAME`
+  - `DOCKERHUB_TOKEN`
+  - `AWS_ACCESS_KEY_ID`
+  - `AWS_SECRET_ACCESS_KEY`
+  - `AWS_DEFAULT_REGION`
+  - `KUBE_CONFIG_DATA`
+
+### Run automation
+
+```bash
+npm run automate:everything
+```
+
+Power users can run the script directly with options:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File cicd/automate_everything.ps1 -HeadBranch feature/rubric-full-marks -BaseBranch master
+```
+
 ## API Endpoints
 
 - `GET /health`

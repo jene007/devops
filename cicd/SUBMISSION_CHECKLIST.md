@@ -8,6 +8,17 @@
   - `a96815f` ci: trigger workflow on main and master
 - Rubric evidence document prepared: `cicd/RUBRIC_EVIDENCE.md`
 - Workflow now triggers on both `main` and `master`
+- One-command automation script available: `cicd/automate_everything.ps1`
+
+## One-command mode
+
+If `gh` is authenticated and required secret environment variables are set, run:
+
+```powershell
+npm run automate:everything
+```
+
+This command performs secrets setup, PR creation, CI wait, merge, main pipeline wait, and log export automatically.
 
 ## Required manual steps (GitHub auth needed)
 
