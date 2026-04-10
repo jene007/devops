@@ -157,6 +157,14 @@ Required GitHub secrets:
 - `AWS_DEFAULT_REGION`
 - `KUBE_CONFIG_DATA`
 
+Automated evidence artifact workflow:
+- File: `.github/workflows/evidence-artifact.yml`
+- Trigger: after successful `JARVIS DevOps CI/CD` run on `master`
+- Output: uploads artifact `deployment-evidence-<run_id>` containing:
+  - `master-run.log`
+  - `summary.md`
+  - `RUBRIC_EVIDENCE.md`
+
 ## Version Control and Collaboration
 
 - `.gitignore` for secure and clean repository state

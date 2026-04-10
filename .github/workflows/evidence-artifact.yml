@@ -1,0 +1,52 @@
+name: Upload Deployment Evidence Artifact
+
+on:
+  workflow_run:
+    workflows: ["JARVIS DevOps CI/CD"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  collect-and-upload-evidence:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build evidence folder
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_NAME: ${{ github.event.workflow_run.name }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          EVIDENCE_DIR="cicd/evidence/run-${RUN_ID}"
+          mkdir -p "${EVIDENCE_DIR}"
+
+          gh run view "${RUN_ID}" --repo "${REPO}" --log > "${EVIDENCE_DIR}/master-run.log"
+
+          {
+            echo "# Automated Evidence Summary"
+            echo
+            echo "- Workflow: ${RUN_NAME}"
+            echo "- Branch: ${HEAD_BRANCH}"
+            echo "- Source run URL: ${RUN_URL}"
+            echo "- Log file: master-run.log"
+            echo "- Rubric evidence: cicd/RUBRIC_EVIDENCE.md"
+          } > "${EVIDENCE_DIR}/summary.md"
+
+          cp cicd/RUBRIC_EVIDENCE.md "${EVIDENCE_DIR}/RUBRIC_EVIDENCE.md"
+
+      - name: Upload evidence artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-evidence-${{ github.event.workflow_run.id }}
+          path: cicd/evidence/run-${{ github.event.workflow_run.id }}
+          if-no-files-found: error
