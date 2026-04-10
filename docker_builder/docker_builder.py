@@ -13,6 +13,11 @@ def generate_dockerfile(app_type: str, app_path: str | Path = ".") -> Path:
     path.mkdir(parents=True, exist_ok=True)
     dockerfile = path / "Dockerfile"
 
+    # Prefer repository-provided Dockerfiles when available.
+    if dockerfile.exists() and dockerfile.stat().st_size > 0:
+        LOGGER.info("Using existing Dockerfile at %s", dockerfile)
+        return dockerfile
+
     if app_type == "node":
         content = (
             "FROM node:18\n\n"
@@ -24,14 +29,30 @@ def generate_dockerfile(app_type: str, app_path: str | Path = ".") -> Path:
             "CMD [\"npm\", \"start\"]\n"
         )
     elif app_type == "python":
+        requirements = path / "requirements.txt"
+        pyproject = path / "pyproject.toml"
+
+        install_section = ""
+        if requirements.exists():
+            install_section = (
+                "COPY requirements.txt ./\n"
+                "RUN pip install --no-cache-dir -r requirements.txt\n"
+            )
+        elif pyproject.exists():
+            install_section = (
+                "COPY pyproject.toml ./\n"
+                "RUN pip install --no-cache-dir .\n"
+            )
+
+        entrypoint = "app.py" if (path / "app.py").exists() else "main.py"
+
         content = (
             "FROM python:3.10-slim\n\n"
             "WORKDIR /app\n"
-            "COPY requirements.txt ./\n"
-            "RUN pip install --no-cache-dir -r requirements.txt\n"
+            f"{install_section}"
             "COPY . .\n"
             "EXPOSE 8000\n"
-            "CMD [\"python\", \"app.py\"]\n"
+            f"CMD [\"python\", \"{entrypoint}\"]\n"
         )
     elif app_type == "java":
         content = (
