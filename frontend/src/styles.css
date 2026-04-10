@@ -233,6 +233,11 @@ textarea::placeholder {
   color: rgba(255, 205, 197, 0.68);
 }
 
+.input-hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .button-row {
   display: flex;
   gap: 10px;

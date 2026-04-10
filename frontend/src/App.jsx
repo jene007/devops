@@ -300,8 +300,11 @@ export default function App() {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             rows={4}
-            placeholder="Deploy my app globally with autoscaling"
+            placeholder="Deploy https://github.com/<owner>/<repo> to aws us-east-1 as python app with docker build and kubernetes rollout"
           />
+          <small className="input-hint">
+            Include: repo URL, cloud, region, app type (node/python/java), and action.
+          </small>
           <div className="button-row">
             <button type="submit" disabled={isRunning || !prompt.trim()}>
               {isRunning ? "Executing..." : "Run Autonomous Pipeline"}
