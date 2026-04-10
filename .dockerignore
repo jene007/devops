@@ -1,0 +1,16 @@
+node_modules
+frontend/node_modules
+.git
+.github
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.log
+.env
+.env.*
+terraform/.terraform
+terraform/.terraform.lock.hcl
+frontend/dist
+workspace_repos

@@ -15,7 +15,11 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-app.listen(port, () => {
-  // Keep runtime output simple for container logs.
-  console.log(`jarvis-app listening on port ${port}`);
-});
+if (require.main === module) {
+  app.listen(port, () => {
+    // Keep runtime output simple for container logs.
+    console.log(`jarvis-app listening on port ${port}`);
+  });
+}
+
+module.exports = app;

@@ -9,6 +9,9 @@ It now satisfies full academic evaluation pillars:
 - Infrastructure as Code (Terraform)
 - Intelligent AI-based deployment planning
 
+Evaluation evidence document:
+- `cicd/RUBRIC_EVIDENCE.md`
+
 ## Core Capabilities
 
 - Accepts natural language commands from CLI/API/Frontend
@@ -159,6 +162,8 @@ Required GitHub secrets:
 - `.gitignore` for secure and clean repository state
 - `CONTRIBUTING.md` for branch/PR rules
 - `.github/CODEOWNERS` for review ownership
+- `.github/PULL_REQUEST_TEMPLATE.md` for validation checklist
+- `.github/ISSUE_TEMPLATE/` for standardized bug/feature tracking
 
 ## Setup
 
@@ -174,6 +179,7 @@ Required GitHub secrets:
 ### Install
 
 ```bash
+npm install
 pip install -r requirements.txt
 cd frontend
 npm install
@@ -219,6 +225,17 @@ Expected behavior for incomplete input:
 - System returns `More information required`
 - Follow-up questions are shown in logs/UI
 - Deployment is blocked until context is complete
+
+## Local Validation Commands
+
+```bash
+npm test
+npm run build
+python -m compileall ai_engine intent_engine github_analyzer docker_builder k8s_deployer terraform_runner orchestrator cli self_healing monitoring
+terraform -chdir=terraform fmt -check
+terraform -chdir=terraform init -backend=false
+terraform -chdir=terraform validate
+```
 
 ## API Endpoints
 
